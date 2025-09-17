@@ -1,4 +1,4 @@
-# Makefile simple estilo estudiante (comentarios en español)
+
 # Contrato: tools, build, test, run, pack, clean, help
 
 SHELL := /bin/bash
@@ -62,6 +62,12 @@ pack:
 	@tar -czf dist/pipeline-$(RELEASE).tar.gz \
 		Makefile src tests docs systemd .gitignore out
 	@echo "Paquete: dist/pipeline-$(RELEASE).tar.gz"
+
+
+tls:
+	@test -n "$(CONFIG_URL)" || (echo "ERROR: define CONFIG_URL. Ej: CONFIG_URL=https://github.com make tls"; exit 1)
+	@bash src/tls-check.sh
+
 
 clean:
 	@rm -rf out/* dist/* 2>/dev/null || true
