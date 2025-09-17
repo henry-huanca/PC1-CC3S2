@@ -67,4 +67,3 @@
     Press CTRL+C to quit
     [INFO] GET /  message=pipeline1 release=v1
     127.0.0.1 - - [16/Sep/2025 17:55:00] "GET / HTTP/1.1" 200 -
-
