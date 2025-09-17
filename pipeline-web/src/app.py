@@ -4,7 +4,7 @@ import sys
 
 # 12-Factor: configuración vía variables de entorno (sin valores codificados)
 PORT = int(os.environ.get("PORT", "8080"))
-MESSAGE = os.environ.get("MESSAGE", "Hola")
+MESSAGE = os.environ.get("MESSAGE", "pipeline0")
 RELEASE = os.environ.get("RELEASE", "v0")
 
 app = Flask(__name__)

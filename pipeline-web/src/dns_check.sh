@@ -23,7 +23,7 @@ dns_checks() {
 
     echo
     log "Comprobando que $DOMAIN resuelva a $CODIGO_IP"
-    ip_resuelto="$(dig +short "$DOMAIN" | tail -n1 || true)"
+    ip_resuelto="$(getent hosts "$DOMAIN" | awk '{print $1}' || true)"
     if [ "$ip_resuelto" = "$CODIGO_IP" ]; then
         echo "[OK] $DOMAIN → $CODIGO_IP"
     else
