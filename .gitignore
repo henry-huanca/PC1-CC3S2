@@ -1,1 +1,7 @@
-pipeline-web/src/venv/
+# artefactos
+out/
+dist/
+*.tar.gz
+
+# entornos
+.env
