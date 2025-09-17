@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 
-# Variables esperadas por entorno (12-Factor): no las fijamos aquí
+# Variables esperadas por entorno (12-Factor)
 # Ejemplo de uso temporal:
 #   PORT=8080 MESSAGE="Hola" RELEASE=v0.1 make run
 # Requeridas mínimas para build/pack/run: RELEASE
@@ -56,18 +56,60 @@ run:
 	@test -n "$(RELEASE)" || (echo "ERROR: define RELEASE. Ej: RELEASE=v0.1 make run"; exit 1)
 	@bash src/pipeline.sh
 
-pack:
-	@test -n "$(RELEASE)" || (echo "ERROR: define RELEASE. Ej: RELEASE=v0.1 make pack"; exit 1)
-	@mkdir -p dist
-	@tar -czf dist/pipeline-$(RELEASE).tar.gz \
+###pack:#
+#	@test -n "$(RELEASE)" || (echo "ERROR: define RELEASE. Ej: RELEASE=v0.1 make pack"; exit 1)
+#	@mkdir -p dist
+#	@tar -czf dist/pipeline-$(RELEASE).tar.gz \
 		Makefile src tests docs systemd .gitignore out
-	@echo "Paquete: dist/pipeline-$(RELEASE).tar.gz"
-
+#	@echo "Paquete: dist/pipeline-$(RELEASE).tar.gz"
+####
 
 tls:
 	@test -n "$(CONFIG_URL)" || (echo "ERROR: define CONFIG_URL. Ej: CONFIG_URL=https://github.com make tls"; exit 1)
 	@bash src/tls-check.sh
 
+.PHONY: tls meta hsts redirects check manifest pack verify
+
+meta:
+	@test -n "$(CONFIG_URL)" || (echo "ERROR: define CONFIG_URL"; exit 1)
+	@bash src/tls-meta.sh
+
+hsts:
+	@test -n "$(CONFIG_URL)" || (echo "ERROR: define CONFIG_URL"; exit 1)
+	@bash src/hsts-check.sh
+
+redirects:
+	@test -n "$(CONFIG_URL)" || (echo "ERROR: define CONFIG_URL"; exit 1)
+	@bash src/redirects-check.sh
+
+# Orquesta todos los chequeos de seguridad
+check: tls meta hsts redirects
+	@echo "[INFO] Check de seguridad completado"
+
+# reproducible de artefactos
+manifest:
+	@mkdir -p dist
+	@{ \
+	  echo "RELEASE=$(RELEASE)"; \
+	  echo "DATE=$$(date -u +%FT%TZ)"; \
+	  find src -type f -printf "%P\n" | sort | sed 's/^/SRC: /'; \
+	  find tests -type f -printf "%P\n" 2>/dev/null | sort | sed 's/^/TEST: /' || true; \
+	} > dist/manifest.txt
+	@echo "[INFO] Manifest generado en dist/manifest.txt"
+
+# Empaquetado 'reproducible-ish' + checksum
+pack: manifest
+	@test -n "$(RELEASE)" || (echo "ERROR: define RELEASE. Ej: RELEASE=v0.3 make pack"; exit 1)
+	@mkdir -p dist
+	@TZ=UTC tar --sort=name --owner=0 --group=0 --numeric-owner \
+	 -czf dist/pipeline-$(RELEASE).tar.gz \
+	 Makefile src tests docs systemd .gitignore
+	@sha256sum dist/pipeline-$(RELEASE).tar.gz | tee dist/SHA256SUMS
+	@echo "[INFO] Paquete y checksum en dist/"
+
+# Verificación rápida de integridad
+verify:
+	@sha256sum -c dist/SHA256SUMS
 
 clean:
 	@rm -rf out/* dist/* 2>/dev/null || true
